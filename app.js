@@ -5,8 +5,11 @@ const path = require('path');
 const session = require('express-session');
 const flash = require('connect-flash');
 
-const pageRouter = require('./routes/page');
+require('dotenv').config();
 
+
+const pageRouter = require('./routes/page');
+const { error } = require('console');
 
 const app = express();
 
@@ -18,28 +21,28 @@ app.use(morgan('dev'));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(express.urlencoded({extended : false}));
-app.use(cookieParser('nodebirdsecret'));
+
+app.use(cookieParser(process.env.COOKIE_SECRET));
 app.use(session({
     resave : false,
     saveUninitialized : false,
-    secret : 'nodebirdsecret',
+    secret : process.env.COOKIE_SECRET,
     cookie : {
         httpOnly : true,
         secure : false,
-    }
+    },
 }));
 
 app.use(flash());
-
 app.use('/', pageRouter);
-
 app.use((req, res, next) => {
-    const err = new Error();
+    const err = new Error('Not found');
     err.status = 404;
     next(err);
 });
 
-app.use((err, req, res, nex) => {
+
+app.use((err, req, res, next) => {
     res.locals.message = err.message;
     res.locals.error = req.app.get('env') === 'development' ? err : {};
     res.status(err.status || 500);
@@ -49,3 +52,4 @@ app.use((err, req, res, nex) => {
 app.listen(app.get('port'), () => {
     console.log(app.get('port'), '번 포트에서 대기 중!!!');
 });
+
